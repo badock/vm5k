@@ -336,7 +336,9 @@ def install_vms(vms, data_file_dir='/tmp/'):
             '--vcpus=' + str(vm['n_cpu']) + ' --cpuset=' + vm['cpuset']
         if vm['tap']:
             cmd += '--network tap,script=no,ifname=' + vm['tap']
+        cmd += ' > /dev/null 2>&1 '
         cmd += ' ; '
+
         hosts_cmds[vm['host']] = cmd if not vm['host'] in hosts_cmds \
             else hosts_cmds[vm['host']] + cmd
 

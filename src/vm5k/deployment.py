@@ -430,8 +430,9 @@ class vm5k_deployment():
                             host).run()
                 nobr_hosts.append(host)
             else:
-                print('Bridge %s is present on host %s' %
-                             style.emph('name'), style.host(host))
+                print('Bridge is present on host')
+                # print('Bridge %s is present on host %s' %
+                #              style.emph('name'), style.host(host))
 
         nobr_hosts = map(lambda x: x.address if isinstance(x, Host) else x, 
                          nobr_hosts)

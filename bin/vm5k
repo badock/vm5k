@@ -34,6 +34,7 @@ from execo_g5k.api_utils import get_host_attributes, get_g5k_clusters,\
 ##############################################################################
 __version__ = '0.7.0'
 
+execution_time = {}
 
 def main():
     """ """
@@ -60,13 +61,17 @@ def main():
 
     # Configure the hosts
     timer['timer'] = Timer()
-    vm5k = setup_hosts(vms, resources, args)
+    deployment = setup_hosts(vms, resources, args)
     i_step += 1
     timer[str(i_step) + '-HOSTS'] = timer['timer'].elapsed()
 
     # Deploy the virtual machines
 
-    print vm5k.hosts
+    result = {
+        "args": args,
+        "deployment": deployment
+    }
+    return result
 
 
 def welcome():
@@ -451,90 +456,93 @@ def _parse_job_args(job_arg):
     return jobs
 
 if __name__ == "__main__":
-    main()
+    result = main()
+    args = result["args"]
+    deployment = result["deployment"]
 
 
 
 
-##############################################################################
-# 
-##############################################################################
-timer = Timer()
-
-
-
-
-
-##############################################################################
-# RETRIEVING RESOURCES
-##############################################################################
-timer = Timer()
+    ##############################################################################
+    #
+    ##############################################################################
+    timer = Timer()
 
 
 
 
 
-##############################################################################
-# INSTALLING THE HOSTS
-##############################################################################
-timer = Timer()
+    ##############################################################################
+    # RETRIEVING RESOURCES
+    ##############################################################################
+    timer = Timer()
 
 
-execution_time['4-HOSTS'] = timer.elapsed()
 
 
-##############################################################################
-# DEPLOYING THE VIRTUAL MACHINES
-##############################################################################
-timer = Timer()
-print_step('Deploy virtual machines')
-if args.infile is None:
-    logger.info('Maximum number of VMs %s',
-                get_max_vms(vm5k.hosts,
-                            int(fromstring(args.vm_template).get('mem'))))
 
-# gr = g5k_graph()
-# for host in vm5k.hosts:
-#     gr.add_host(host)
-# for vm in vm5k.vms:
-#     gr.add_node(vm['id'], {'kind': 'vm'})
-#     gr.add_edge(vm['id'], vm['host'])
-# plot = treemap(gr)
-# plot.savefig('test.png')
-
-f = open(args.outdir + '/vms.list', 'w')
-for vm in vm5k.vms:
-    f.write(vm['ip'] + '\t' + vm['id'] + '\n')
-f.close()
-vm5k.get_state(name='initial_topo')
-vm5k.deploy_vms(clean_disks=args.vm_clean_disks,
-                disk_location=args.vm_disk_location,
-                apt_cacher=args.aptcacher)
-vm5k.get_state(name='final_topo', plot=args.plot)
-
-execution_time['5-VMS'] = timer.elapsed()
-
-total = sum(value for value in execution_time.itervalues())
-print_step('VM5K Execution terminated in ' + str(format_duration(total)))
-log = ''
-
-for step in sorted(execution_time.keys()):
-    log += '\n' + style.emph(step + ':').ljust(10) + \
-        format_duration(execution_time[step])
-
-logger.info('Details: \nFiles saved in %s %s', style.emph(args.outdir), log)
+    ##############################################################################
+    # INSTALLING THE HOSTS
+    ##############################################################################
+    timer = Timer()
 
 
-##############################################################################
-# LAUNCHING PROGRAM
-##############################################################################
-if args.program is not None:
-    print_step('Lauching program')
-    logger.info(args.program)
-    if args.program in os.listdir('.'):
-        args.program = './' + args.program
-    prog = Process(args.program)
-    prog.shell = True
-    prog.stdout_handlers.append(sys.stdout)
-    prog.stderr_handlers.append(sys.stderr)
-    prog.run()
+    execution_time['4-HOSTS'] = timer.elapsed()
+
+
+    ##############################################################################
+    # DEPLOYING THE VIRTUAL MACHINES
+    ##############################################################################
+    timer = Timer()
+    print_step('Deploy virtual machines')
+    if args.infile is None:
+        logger.info('Maximum number of VMs %s',
+                    get_max_vms(deployment.hosts,
+                                int(fromstring(args.vm_template).get('mem'))))
+
+    # gr = g5k_graph()
+    # for host in vm5k.hosts:
+    #     gr.add_host(host)
+    # for vm in vm5k.vms:
+    #     gr.add_node(vm['id'], {'kind': 'vm'})
+    #     gr.add_edge(vm['id'], vm['host'])
+    # plot = treemap(gr)
+    # plot.savefig('test.png')
+
+    f = open(args.outdir + '/vms.list', 'w')
+    for vm in deployment.vms:
+        f.write(vm['ip'] + '\t' + vm['id'] + '\n')
+    f.close()
+
+    deployment.get_state(name='initial_topo')
+    deployment.deploy_vms(clean_disks=args.vm_clean_disks,
+                    disk_location=args.vm_disk_location,
+                    apt_cacher=args.aptcacher)
+    deployment.get_state(name='final_topo', plot=args.plot)
+
+    execution_time['5-VMS'] = timer.elapsed()
+
+    total = sum(value for value in execution_time.itervalues())
+    print_step('VM5K Execution terminated in ' + str(format_duration(total)))
+    log = ''
+
+    for step in sorted(execution_time.keys()):
+        log += '\n' + style.emph(step + ':').ljust(10) + \
+            format_duration(execution_time[step])
+
+    logger.info('Details: \nFiles saved in %s %s', style.emph(args.outdir), log)
+
+
+    ##############################################################################
+    # LAUNCHING PROGRAM
+    ##############################################################################
+    if args.program is not None:
+        print_step('Lauching program')
+        logger.info(args.program)
+        if args.program in os.listdir('.'):
+            args.program = './' + args.program
+        prog = Process(args.program)
+        prog.shell = True
+        prog.stdout_handlers.append(sys.stdout)
+        prog.stderr_handlers.append(sys.stderr)
+        prog.run()
